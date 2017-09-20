@@ -2,7 +2,9 @@ import voluptuous as vol
 import logging
 
 from homeassistant.helpers import config_validation as cv
-from homeassistant.components.light import (Light, ATTR_BRIGHTNESS, SUPPORT_BRIGHTNESS)
+from homeassistant.components.light import (
+    Light, ATTR_BRIGHTNESS, SUPPORT_BRIGHTNESS, SUPPORT_RGB_COLOR)
+
 from .. import meshmesh
 
 _LOGGER = logging.getLogger(__name__)
@@ -88,4 +90,4 @@ class MeshMeshLight(Light):
 
     @property
     def supported_features(self):
-        return SUPPORT_BRIGHTNESS
+        return SUPPORT_BRIGHTNESS | SUPPORT_RGB_COLOR
