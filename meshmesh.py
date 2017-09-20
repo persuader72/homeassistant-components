@@ -186,7 +186,11 @@ class MeshMeshDigitalIn(Entity):
 
     def update(self):
         try:
-            self._state = int(DEVICE.cmd_digital_in(self._config.pin, serial=self._config.address, wait=True)) and self._config.pin != 0
+            value = DEVICE.cmd_digital_in(self._config.pin, serial=self._config.address, wait=True)
+            if value is None:
+                _LOGGER.error("Null value returnd from device at address %08X", self._config.address)
+                return
+            self._state = value & self._config.pin != 0
             _LOGGER.debug("MeshMeshDigitalIn.update --------------------- %d", self._state)
         except MESHMESH_TX_FAILURE:
             _LOGGER.warning("Transmission failure when attempting to get pin from MeshMesh device at address: %08X", self._config.address)
