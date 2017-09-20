@@ -2,8 +2,7 @@ import logging
 
 import voluptuous as vol
 
-from homeassistant.components import meshmesh
-from homeassistant.components.meshmesh import PLATFORM_SCHEMA
+from .. import meshmesh
 from homeassistant.const import TEMP_CELSIUS
 from homeassistant.helpers.entity import Entity
 
@@ -17,7 +16,7 @@ DEPENDENCIES = ['meshmesh']
 
 TYPES = ['light', 'analog']
 
-PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
+PLATFORM_SCHEMA = meshmesh.PLATFORM_SCHEMA.extend({
     vol.Required(CONF_TYPE): vol.In(TYPES),
     vol.Optional(CONF_MAX_VOLTS, default=DEFAULT_VOLTS): vol.Coerce(float),
 })
