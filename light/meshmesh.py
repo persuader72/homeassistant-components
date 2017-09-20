@@ -67,16 +67,20 @@ class MeshMeshLight(Light):
 
     def turn_on(self, **kwargs) -> None:
         print(kwargs)
-        color = kwargs[ATTR_RGB_COLOR] if ATTR_RGB_COLOR in kwargs else None
-        bright = kwargs[ATTR_BRIGHTNESS] if ATTR_BRIGHTNESS in kwargs else 128
-        _LOGGER.debug("MeshMeshLight.turn_on set light %08X at brightness at %s color at %s", self._config.address, bright, color)
-        pwm = int(bright/256.0*1024.0)
-        try:
-            meshmesh.DEVICE.set_analog_out(self._config.address, DEFAULT_CHANNEL, pwm)
-        except meshmesh.MESHMESH_TX_FAILURE:
-            _LOGGER.warning("MeshMeshLight.turn_on Transmission failure with device at addres: %08X", self._config.address)
-        except meshmesh.MESHMESH_EXCEPTION:
-            _LOGGER.warning("MeshMeshLight.turn_on Transmission failure with device at addres: %08X", self._config.address)
+        colors = kwargs[ATTR_RGB_COLOR] if ATTR_RGB_COLOR in kwargs else None
+        if colors is not None:
+            red, green, blue = colors
+            self._set_rgb_color(red, green, blue)
+        else:
+            bright = kwargs[ATTR_BRIGHTNESS] if ATTR_BRIGHTNESS in kwargs else 128
+            _LOGGER.debug("MeshMeshLight.turn_on set light %08X at brightness at %s color at %s", self._config.address, bright, color)
+            pwm = int(bright/256.0*1024.0)
+            try:
+                meshmesh.DEVICE.set_analog_out(self._config.address, DEFAULT_CHANNEL, pwm)
+            except meshmesh.MESHMESH_TX_FAILURE:
+                _LOGGER.warning("MeshMeshLight.turn_on Transmission failure with device at addres: %08X", self._config.address)
+            except meshmesh.MESHMESH_EXCEPTION:
+                _LOGGER.warning("MeshMeshLight.turn_on Transmission failure with device at addres: %08X", self._config.address)
 
         if self._optimistic:
             self._state = True
