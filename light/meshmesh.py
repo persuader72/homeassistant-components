@@ -16,8 +16,8 @@ DEFAULT_ON_BRIGHTNESS = 127
 
 DEFAULT_CHANNEL = 255
 BLUE_CHANNEL = 0
-GREEN_CHANNEL = 1
-RED_CHANNEL = 2
+RED_CHANNEL = 1
+GREEN_CHANNEL = 2
 WHITE_CHANNEL = 3
 
 PLATFORM_SCHEMA = meshmesh.PLATFORM_SCHEMA.extend({
@@ -53,13 +53,13 @@ class MeshMeshLight(Light):
         red = int(red/256.0*1024.0)
         green = int(green/256.0*1024.0)
         blue = int(blue/256.0*1024.0)
-        white = 64
+        white = int(red + green + blue / 9)
 
         try:
-            meshmesh.DEVICE.set_analog_out(self._config.address, RED_CHANNEL, red)
-            meshmesh.DEVICE.set_analog_out(self._config.address, GREEN_CHANNEL, green)
-            meshmesh.DEVICE.set_analog_out(self._config.address, BLUE_CHANNEL, blue)
-            meshmesh.DEVICE.set_analog_out(self._config.address, WHITE_CHANNEL, white)
+            meshmesh.DEVICE.cmd_analog_out(RED_CHANNEL, red, serial=self._config.address, wait=True)
+            meshmesh.DEVICE.cmd_analog_out(GREEN_CHANNEL, green, serial=self._config.address, wait=True)
+            meshmesh.DEVICE.cmd_analog_out(BLUE_CHANNEL, blue, serial=self._config.address, wait=True)
+            meshmesh.DEVICE.cmd_analog_out(WHITE_CHANNEL, white, serial=self._config.address, wait=True)
         except meshmesh.MESHMESH_TX_FAILURE:
             _LOGGER.warning("MeshMeshLight.turn_on Transmission failure with device at addres: %08X", self._config.address)
         except meshmesh.MESHMESH_EXCEPTION:
@@ -68,14 +68,13 @@ class MeshMeshLight(Light):
         return white
 
     def turn_on(self, **kwargs) -> None:
-        print(kwargs)
+        bright = kwargs[ATTR_BRIGHTNESS] if ATTR_BRIGHTNESS in kwargs else 128
         colors = kwargs[ATTR_RGB_COLOR] if ATTR_RGB_COLOR in kwargs else None
+        _LOGGER.debug("MeshMeshLight.turn_on set light %08X at brightness at %s color at %s", self._config.address, bright, colors)
         if colors is not None:
             red, green, blue = colors
             bright = self._set_rgb_color(red, green, blue)
         else:
-            bright = kwargs[ATTR_BRIGHTNESS] if ATTR_BRIGHTNESS in kwargs else 128
-            _LOGGER.debug("MeshMeshLight.turn_on set light %08X at brightness at %s color at %s", self._config.address, bright, colors)
             pwm = int(bright/256.0*1024.0)
             try:
                 meshmesh.DEVICE.set_analog_out(self._config.address, DEFAULT_CHANNEL, pwm)
