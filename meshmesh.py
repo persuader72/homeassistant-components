@@ -191,7 +191,6 @@ class MeshMeshDigitalIn(Entity):
                 _LOGGER.error("Null value returnd from device at address %08X", self._config.address)
                 return
             self._state = value & self._config.pin != 0
-            _LOGGER.debug("MeshMeshDigitalIn.update --------------------- %d", self._state)
         except MESHMESH_TX_FAILURE:
             _LOGGER.warning("Transmission failure when attempting to get pin from MeshMesh device at address: %08X", self._config.address)
         except MESHMESH_EXCEPTION:
