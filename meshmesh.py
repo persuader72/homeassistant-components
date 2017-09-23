@@ -227,11 +227,3 @@ class MeshMeshDigitalOut(MeshMeshDigitalIn):
     def turn_off(self, **kwargs):
         self._set_state(False)
 
-    def update(self):
-        try:
-            pin_state = DEVICE.cmd_digital_in(self._config.pin, serial=self._config.address, wait=True)
-            self._state = True if pin_state['value'] == self._config.pin else False
-        except MESHMESH_TX_FAILURE:
-            _LOGGER.warning("Transmission failure when attempting to get sample from MeshMesh device at address: %08X", self._config.address)
-        except MESHMESH_EXCEPTION:
-            _LOGGER.warning("Unable to get sample from MeshMesh device at address: %08X", self._config.address)
