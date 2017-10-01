@@ -60,7 +60,7 @@ def setup(hass, config):
         print("SerialException %s", exc)
         return False
 
-    DEVICE = MeshMesh(ser, director_present_callback=None)
+    DEVICE = MeshMesh(ser)
     MESHMESH_EXCEPTION = MeshMeshException
     MESHMESH_TX_FAILURE = MeshMeshTxFailure
 
