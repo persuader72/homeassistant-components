@@ -14,7 +14,8 @@ CONF_MAX_VOLTS = 'max_volts'
 DEFAULT_VOLTS = 1.2
 DEPENDENCIES = ['meshmesh']
 
-TYPES = ['light', 'analog']
+TYPES = ['analog', 'temperature', 'pressure', 'humidity']
+NAMES_TYPE = ['Analog', 'Temperature', 'Pressure', 'Humidity']
 
 PLATFORM_SCHEMA = meshmesh.PLATFORM_SCHEMA.extend({
     vol.Required(CONF_TYPE): vol.In(TYPES),
@@ -25,46 +26,65 @@ PLATFORM_SCHEMA = meshmesh.PLATFORM_SCHEMA.extend({
 def setup_platform(hass, config, add_devices, discovery_info=None):
     typ = config.get(CONF_TYPE)
 
-    try:
-        sensor_class, config_class = TYPE_CLASSES[typ]
-    except KeyError:
-        _LOGGER.exception("Unknown MeshMesh sensor type: %s", typ)
-        return
+    if typ == 'analog':
+        add_devices([meshmesh.MeshMeshAnalogIn(hass, meshmesh.MeshMeshAnalogInConfig(config))], True)
+    else:
+        add_devices([MeshMeshSensor(typ, meshmesh.MeshMeshDigitalInConfig(config))], True)
 
-    add_devices([sensor_class(hass, config_class(config))], True)
     return True
 
 
-class MeshMeshLightSensor(Entity):
+class MeshMeshSensor(Entity):
     """Representation of XBee Pro temperature sensor."""
 
-    def __init__(self, hass, config):
-        """Initialize the sensor."""
+    def __init__(self, stype, config):
+        self._sens_type = stype
         self._config = config
-        self._temp = None
+        self._value = None
 
     @property
     def name(self):
-        """Return the name of the sensor."""
         return self._config.name
 
     @property
+    def config(self):
+        return self._config
+
+    @property
+    def should_poll(self):
+        return self._config.should_poll
+
+    @property
     def state(self):
-        """Return the state of the sensor."""
-        return self._temp
+        return self._value
 
     @property
     def unit_of_measurement(self):
-        """Return the unit of measurement the value is expressed in."""
-        return TEMP_CELSIUS
+        if self._sens_type == 'temperature':
+            return TEMP_CELSIUS
+        elif self._sens_type == 'humidity':
+            return '%'
+        elif self._sens_type == 'illumination':
+            return 'lm'
+        elif self._sens_type == 'lux':
+            return 'lx'
+        elif self._sens_type == 'pressure':
+            return 'hPa'
 
-    def update(self, *args):
-        pass
-
-
-
-# This must be below the classes to which it refers.
-TYPE_CLASSES = {
-    "light": (MeshMeshLightSensor, meshmesh.MeshMeshConfig),
-    "analog": (meshmesh.MeshMeshAnalogIn, meshmesh.MeshMeshAnalogInConfig)
-}
+    def update(self):
+        try:
+            temp, press, humi = meshmesh.DEVICE.cmd_weather_data(serial=self._config.address, wait=True)
+            if self._sens_type == 'temperature':
+                self._value = temp
+            elif self._sens_type == 'humidity':
+                self._value = humi
+            elif self._sens_type == 'illumination':
+                self._value = None
+            elif self._sens_type == 'lux':
+                self._value = None
+            elif self._sens_type == 'pressure':
+                self._value = press
+        except meshmesh.MESHMESH_TX_FAILURE:
+            _LOGGER.warning("Transmission failure when attempting to get sample from MeshMesh device at address: %08X", self._config.address)
+        except meshmesh.MESHMESH_EXCEPTION:
+            _LOGGER.warning("Unable to get sample from MeshMesh device at address: %08X", self._config.address)

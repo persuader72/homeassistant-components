@@ -89,7 +89,13 @@ class MeshMeshConfig(object):
     def address(self):
         address = self._config.get("address")
         if address is not None:
-            address, = unpack('>I', unhexlify(address))
+            if address == '0':
+                address = 0
+            elif address == '-1':
+                address = -1
+            else:
+                address, = unpack('>I', unhexlify(address))
+
         return address
 
     @property
