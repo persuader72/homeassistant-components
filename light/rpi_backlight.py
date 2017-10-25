@@ -1,6 +1,9 @@
 from os import path
 
+import voluptuous as vol
+
 from homeassistant.components.light import Light, SUPPORT_BRIGHTNESS, ATTR_BRIGHTNESS
+from homeassistant.helpers import config_validation as cv
 
 PATH_BL = "/sys/class/backlight/rpi_backlight/"
 FILE_BL_POWER = "bl_power"
@@ -9,18 +12,26 @@ FILE_BL_CURR_BRIGHT = "actual_brightness"
 FILE_BL_POWER_OFF = "1"
 FILE_BL_POWER_ON = "0"
 
+
+CONFIG_SCHEMA = vol.Schema({
+    vol.Optional("name", default="rpi_backlight"): cv.string,
+}, extra=vol.ALLOW_EXTRA)
+
+
 def setup_platform(hass, config, add_devices, discovery_info=None):
-    add_devices(RpiLcdLight())
+    add_devices([RpiBacklightLight(config)])
 
 
-class RpiLcdLight(Light):
-    def __init__(self):
+class RpiBacklightLight(Light):
+    def __init__(self, config):
         self._init = False
+        self._name = config.get("name")
         self._state = False
         self._brightness = False
 
         if _sysclass_in(FILE_BL_POWER) != '':
             self._init = True
+            self.update()
 
     @property
     def should_poll(self):
@@ -28,7 +39,7 @@ class RpiLcdLight(Light):
 
     @property
     def name(self):
-        return "rpi_lcd"
+        return self._name
 
     @property
     def brightness(self):
@@ -40,7 +51,7 @@ class RpiLcdLight(Light):
 
     def turn_on(self, **kwargs):
         if ATTR_BRIGHTNESS in kwargs:
-            val = kwargs[ATTR_BRIGHTNESS]
+            val = str(kwargs[ATTR_BRIGHTNESS])
             _sysclass_out(FILE_BL_BRIGHT, val)
             _sysclass_out(FILE_BL_POWER, FILE_BL_POWER_ON)
         else:
