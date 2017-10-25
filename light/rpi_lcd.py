@@ -1,7 +1,5 @@
 from os import path
 
-from enocean.protocol.constants import PACKET
-
 from homeassistant.components.light import Light, SUPPORT_BRIGHTNESS, ATTR_BRIGHTNESS
 
 PATH_BL = "/sys/class/backlight/rpi_backlight/"
