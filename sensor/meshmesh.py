@@ -2,6 +2,8 @@ import logging
 
 import voluptuous as vol
 
+from xmlrpc.client import Fault
+
 from .. import meshmesh
 from homeassistant.const import TEMP_CELSIUS
 from homeassistant.helpers.entity import Entity
@@ -73,7 +75,7 @@ class MeshMeshSensor(Entity):
 
     def update(self):
         try:
-            temp, press, humi = meshmesh.DEVICE.cmd_weather_data(serial=self._config.address, wait=True)
+            temp, press, humi = meshmesh.DEVICE.cmd_weather_data(self._config.address)
             if self._sens_type == 'temperature':
                 self._value = temp
             elif self._sens_type == 'humidity':
@@ -84,7 +86,7 @@ class MeshMeshSensor(Entity):
                 self._value = None
             elif self._sens_type == 'pressure':
                 self._value = press
-        except meshmesh.MESHMESH_TX_FAILURE:
+        except Fault:
             _LOGGER.warning("Transmission failure when attempting to get sample from MeshMesh device at address: %08X", self._config.address)
-        except meshmesh.MESHMESH_EXCEPTION:
-            _LOGGER.warning("Unable to get sample from MeshMesh device at address: %08X", self._config.address)
+        except ConnectionError:
+            _LOGGER.warning("Connection error with meshmeshhub proxy server")

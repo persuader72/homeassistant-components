@@ -1,24 +1,21 @@
 import voluptuous as vol
 import logging
-from serial import Serial, SerialException
-from binascii import hexlify, unhexlify
-from struct import unpack
 
-from homeassistant.const import (EVENT_HOMEASSISTANT_STOP, CONF_DEVICE, CONF_NAME, CONF_PIN)
+import xmlrpc.client
+
+from homeassistant.const import (EVENT_HOMEASSISTANT_STOP, CONF_NAME)
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.entity import Entity
-
-#REQUIREMENTS = ['meshmesh==0.0.7']
 
 _LOGGER = logging.getLogger(__name__)
 
 DOMAIN = 'meshmesh'
 
+CONF_URL = 'url'
+DEFAULT_URL = "http://localhost:8801/"
 CONF_ADDRESS = 'address'
-CONF_BAUD = 'baud'
+DEFAULT_ADDRESS = '0'
 
-DEFAULT_DEVICE = '/dev/ttyUSB0'
-DEFAULT_BAUD = 115200
 DEFAULT_ADC_MAX_VOLTS = 1.2
 ESP_ADC_RESOLUTION = 1023.0
 
@@ -31,49 +28,30 @@ ADC_PERCENTAGE = None
 
 CONFIG_SCHEMA = vol.Schema({
     DOMAIN: vol.Schema({
-        vol.Optional(CONF_BAUD, default=DEFAULT_BAUD): cv.string,
-        vol.Optional(CONF_DEVICE, default=DEFAULT_DEVICE): cv.string,
+        vol.Required(CONF_URL): cv.url,
     }),
 }, extra=vol.ALLOW_EXTRA)
 
 PLATFORM_SCHEMA = vol.Schema({
     vol.Required(CONF_NAME): cv.string,
-    vol.Optional(CONF_PIN): cv.positive_int,
-    vol.Required(CONF_ADDRESS): cv.string,
+    vol.Required(CONF_ADDRESS): cv.positive_int,
 }, extra=vol.ALLOW_EXTRA)
 
 
 def setup(hass, config):
     global DEVICE
-    global MESHMESH_EXCEPTION
-    global MESHMESH_TX_FAILURE
 
-    from meshmeshhub.meshmesh import MeshMesh
-    from meshmeshhub.exceptions import (MeshMeshException, MeshMeshTxFailure)
-
-    usb_device = config[DOMAIN].get(CONF_DEVICE, DEFAULT_DEVICE)
-    baud = int(config[DOMAIN].get(CONF_BAUD, DEFAULT_BAUD))
-
-    try:
-        ser = Serial(usb_device, baudrate=baud)
-    except SerialException as exc:
-        print("SerialException %s", exc)
-        return False
-
-    DEVICE = MeshMesh(ser)
-    MESHMESH_EXCEPTION = MeshMeshException
-    MESHMESH_TX_FAILURE = MeshMeshTxFailure
+    url = config[DOMAIN].get(CONF_URL, DEFAULT_URL)
+    DEVICE = xmlrpc.client.ServerProxy(url)
 
     """Your controller/hub specific code."""
-    hass.bus.listen_once(EVENT_HOMEASSISTANT_STOP, close_serial_port)
-    print(usb_device, baud)
+    hass.bus.listen_once(EVENT_HOMEASSISTANT_STOP, close_xmlrpc)
+    print(DOMAIN, 'setup', url)
     return True
 
 
-def close_serial_port(*args):
-    global DEVICE
-    """Close the serial port we're using to communicate with the ZigBee."""
-    DEVICE.mm.halt()
+def close_xmlrpc(*args):
+    pass
 
 
 class MeshMeshConfig(object):
@@ -87,16 +65,7 @@ class MeshMeshConfig(object):
 
     @property
     def address(self):
-        address = self._config.get("address")
-        if address is not None:
-            if address == '0':
-                address = 0
-            elif address == '-1':
-                address = -1
-            else:
-                address, = unpack('>I', unhexlify(address))
-
-        return address
+        return self._config.get("address")
 
     @property
     def should_poll(self):
@@ -143,11 +112,12 @@ class MeshMeshAnalogIn(Entity):
 
     def update(self):
         try:
-            self._value = int(DEVICE.read_analog_pin(self._config.address) / ESP_ADC_RESOLUTION * 1000.0) / 10.0
-        except MESHMESH_TX_FAILURE:
-            _LOGGER.warning("Transmission failure when attempting to get sample from MeshMesh device at address: %08X", self._config.address)
-        except MESHMESH_EXCEPTION:
-            _LOGGER.warning("Unable to get sample from MeshMesh device at address: %08X", self._config.address)
+            print("MeshMeshAnalogIn.update %06X" % self._config.address)
+            self._value = int(DEVICE.cmd_read_analog(self._config.address) / ESP_ADC_RESOLUTION * 1000.0) / 10.0
+        except xmlrpc.client.Fault:
+            _LOGGER.warning("MeshMeshLight.turn_on Transmission failure with device at addres: %08X", self._config.address)
+        except ConnectionError:
+            _LOGGER.warning("Connection error with meshmeshhub proxy server")
 
 
 class MeshMeshAnalogOutConfig(MeshMeshPinConfig):
@@ -215,7 +185,7 @@ class MeshMeshDigitalOut(MeshMeshDigitalIn):
 
     def _set_state(self, state):
         try:
-            frame = DEVICE.cmd_digital_out(self._config.pin, self._config.pin if state else 0, serial=self._config.address, wait=True)
+            DEVICE.cmd_digital_out(self._config.pin, self._config.pin if state else 0, serial=self._config.address, wait=True)
         except MESHMESH_TX_FAILURE:
             _LOGGER.warning("Transmission failure when attempting to set output pin on ZigBee device at address: %08X", self._config.address)
             return
@@ -231,4 +201,3 @@ class MeshMeshDigitalOut(MeshMeshDigitalIn):
 
     def turn_off(self, **kwargs):
         self._set_state(False)
-
