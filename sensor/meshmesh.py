@@ -63,7 +63,7 @@ class MeshMeshSensor(Entity):
     @property
     def unit_of_measurement(self):
         if self._sens_type == 'temperature':
-            return TEMP_CELSIUS
+            return 'C'
         elif self._sens_type == 'humidity':
             return '%'
         elif self._sens_type == 'illumination':

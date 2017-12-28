@@ -162,7 +162,7 @@ class MeshMeshDigitalIn(Entity):
 
     def update(self):
         try:
-            value = DEVICE.cmd_digital_in(self._config.pin, serial=self._config.address, wait=True)
+            value = DEVICE.cmd_digital_in(self._config.pin, self._config.address)
             if value is None:
                 _LOGGER.error("Null value returnd from device at address %08X", self._config.address)
                 return
@@ -185,13 +185,9 @@ class MeshMeshDigitalOut(MeshMeshDigitalIn):
 
     def _set_state(self, state):
         try:
-            DEVICE.cmd_digital_out(self._config.pin, self._config.pin if state else 0, serial=self._config.address, wait=True)
-        except MESHMESH_TX_FAILURE:
-            _LOGGER.warning("Transmission failure when attempting to set output pin on ZigBee device at address: %08X", self._config.address)
-            return
-        except MESHMESH_EXCEPTION as exc:
-            _LOGGER.exception("Unable to set digital pin on ZigBee device: %s", exc)
-            return
+            DEVICE.cmd_digital_out(self._config.pin, self._config.pin if state else 0, self._config.address)
+        except xmlrpc.client.Fault:
+            _LOGGER.warning("Transmission failure when attempting to set pin on MeshMesh device at address: %08X", self._config.address)
         self._state = state
         if not self.should_poll:
             self.schedule_update_ha_state()
