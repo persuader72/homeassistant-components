@@ -7,6 +7,8 @@ from homeassistant.const import (EVENT_HOMEASSISTANT_STOP, CONF_NAME)
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.entity import Entity
 
+from meshmesh.qtgui.transport import RequestsTransport
+
 _LOGGER = logging.getLogger(__name__)
 
 DOMAIN = 'meshmesh'
@@ -42,7 +44,7 @@ def setup(hass, config):
     global DEVICE
 
     url = config[DOMAIN].get(CONF_URL, DEFAULT_URL)
-    DEVICE = xmlrpc.client.ServerProxy(url)
+    DEVICE = xmlrpc.client.ServerProxy(url, transport=RequestsTransport())
 
     """Your controller/hub specific code."""
     hass.bus.listen_once(EVENT_HOMEASSISTANT_STOP, close_xmlrpc)
