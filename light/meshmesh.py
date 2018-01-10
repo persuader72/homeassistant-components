@@ -15,7 +15,7 @@ CONF_ON_STATE = 'on_state'
 DEFAULT_ON_STATE = True
 
 CONF_ON_BRIGHTNESS = 'on_brightness'
-DEFAULT_ON_BRIGHTNESS = 127
+DEFAULT_ON_BRIGHTNESS = 224
 
 CONF_MODE = "mode"
 DEFAULT_MODE = "pwm"
@@ -54,7 +54,6 @@ class MeshMeshLightConfig(meshmesh.MeshMeshConfig):
 
 
 class MeshMeshLight(Light):
-
     def __init__(self, hass, config):
         self._optimistic = True
         self._state = config.on_state
@@ -63,30 +62,22 @@ class MeshMeshLight(Light):
         self._xy_color = (.5, .5)
         self._config = config
 
-    def _set_rgb_color(self, red, green, blue):
-        red = int(red/256.0*1024.0)
-        green = int(green/256.0*1024.0)
-        blue = int(blue/256.0*1024.0)
-        white = int(red + green + blue / 9)
-
+    def _set_brighness(self, bright):
         try:
-            meshmesh.DEVICE.cmd_analog_out(RED_CHANNEL, red, serial=self._config.address, wait=True)
-            meshmesh.DEVICE.cmd_analog_out(GREEN_CHANNEL, green, serial=self._config.address, wait=True)
-            meshmesh.DEVICE.cmd_analog_out(BLUE_CHANNEL, blue, serial=self._config.address, wait=True)
-            meshmesh.DEVICE.cmd_analog_out(WHITE_CHANNEL, white, serial=self._config.address, wait=True)
+            meshmesh.DEVICE.cmd_custom_light_set(0, 0, 0, bright, self._config.address)
         except Fault:
-            _LOGGER.warning("MeshMeshLight.turn_on Transmission failure with device at addres: %08X", self._config.address)
+            _LOGGER.warning("MeshMeshLight._turn_pwm_on Transmission failure with device at addres: %08X", self._config.address)
         except ConnectionError:
             _LOGGER.warning("Connection error with meshmeshhub proxy server")
 
-        return white
-
-    def _turn_pwm_on(self, bright):
-        pwm = int(bright / 256.0 * 1024.0)
+    def _set_rgb_color(self, red, green, blue):
         try:
-            meshmesh.DEVICE.set_analog_out(self._config.address, DEFAULT_CHANNEL, pwm)
+            meshmesh.DEVICE.cmd_custom_light_set(red, green, blue, 0, self._config.address)
         except Fault:
-            _LOGGER.warning("MeshMeshLight._turn_pwm_on Transmission failure with device at addres: %08X", self._config.address)
+            print(str(Fault))
+            _LOGGER.warning("MeshMeshLight.turn_on Transmission failure with device at addres: %08X", self._config.address)
+        except ConnectionError:
+            _LOGGER.warning("Connection error with meshmeshhub proxy server")
 
     def _turn_dali_on(self, bright):
         _LOGGER.warning("_turn_dali_on bright %d", bright)
@@ -98,18 +89,22 @@ class MeshMeshLight(Light):
             _LOGGER.warning("Connection error with meshmeshhub proxy server")
 
     def turn_on(self, **kwargs) -> None:
-        bright = kwargs[ATTR_BRIGHTNESS] if ATTR_BRIGHTNESS in kwargs else 128
+        bright = kwargs[ATTR_BRIGHTNESS] if ATTR_BRIGHTNESS in kwargs else None
         colors = kwargs[ATTR_RGB_COLOR] if ATTR_RGB_COLOR in kwargs else None
         _LOGGER.debug("MeshMeshLight.turn_on set light %08X at brightness at %s color at %s", self._config.address, bright, colors)
+        if bright is None and colors is None:
+            bright = DEFAULT_ON_BRIGHTNESS
 
-        if self._mode == 'pwm':
-            self._turn_pwm_on(bright)
-        elif self._mode == 'dali':
+        if self._mode == 'pwm' and bright is not None:
+            self._set_brighness(bright)
+        elif self._mode == 'dali' and bright is not None:
             self._turn_dali_on(bright)
         elif self._mode == 'pwmrgb':
             if colors is not None:
                 red, green, blue = colors
-                bright = self._set_rgb_color(red, green, blue)
+                self._set_rgb_color(red, green, blue)
+            elif bright is not None:
+                self._set_brighness(bright)
 
         if self._optimistic:
             self._state = True
@@ -119,7 +114,9 @@ class MeshMeshLight(Light):
 
     def turn_off(self, **kwargs) -> None:
         if self._mode == 'pwm':
-            self._turn_pwm_on(0)
+            self._set_brighness(0)
+        elif self._mode == 'pwmrgb':
+            self._set_brighness(0)
         elif self._mode == 'dali':
             self._turn_dali_on(0)
 
