@@ -37,8 +37,6 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
 
 
 class MeshMeshSensor(Entity):
-    """Representation of XBee Pro temperature sensor."""
-
     def __init__(self, stype, config):
         self._sens_type = stype
         self._config = config

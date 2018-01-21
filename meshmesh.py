@@ -169,10 +169,10 @@ class MeshMeshDigitalIn(Entity):
                 _LOGGER.error("Null value returnd from device at address %08X", self._config.address)
                 return
             self._state = value & self._config.pin != 0
-        except MESHMESH_TX_FAILURE:
-            _LOGGER.warning("Transmission failure when attempting to get pin from MeshMesh device at address: %08X", self._config.address)
-        except MESHMESH_EXCEPTION:
-            _LOGGER.warning("Transmission failure when attempting to get pin from MeshMesh device at address: %08X", self._config.address)
+        except xmlrpc.client.Fault:
+            _LOGGER.warning("MeshMeshLight.turn_on Transmission failure with device at addres: %08X", self._config.address)
+        except ConnectionError:
+            _LOGGER.warning("Connection error with meshmeshhub proxy server")
 
 
 class MeshMeshDigitalOutConfig(MeshMeshPinConfig):
