@@ -16,8 +16,8 @@ CONF_MAX_VOLTS = 'max_volts'
 DEFAULT_VOLTS = 1.2
 DEPENDENCIES = ['meshmesh']
 
-TYPES = ['analog', 'temperature', 'pressure', 'humidity']
-NAMES_TYPE = ['Analog', 'Temperature', 'Pressure', 'Humidity']
+TYPES = ['analog', 'temperature', 'pressure', 'humidity', 'thermometer']
+NAMES_TYPE = ['Analog', 'Temperature', 'Pressure', 'Humidity', 'Temperature']
 
 PLATFORM_SCHEMA = meshmesh.PLATFORM_SCHEMA.extend({
     vol.Required(CONF_TYPE): vol.In(TYPES),
@@ -70,20 +70,25 @@ class MeshMeshSensor(Entity):
             return 'lx'
         elif self._sens_type == 'pressure':
             return 'hPa'
+        elif self._sens_type == 'thermometer':
+            return 'C'
 
     def update(self):
         try:
-            temp, press, humi = meshmesh.DEVICE.cmd_weather_data(self._config.address)
-            if self._sens_type == 'temperature':
-                self._value = temp
-            elif self._sens_type == 'humidity':
-                self._value = humi
-            elif self._sens_type == 'illumination':
-                self._value = None
-            elif self._sens_type == 'lux':
-                self._value = None
-            elif self._sens_type == 'pressure':
-                self._value = press
+            if self._sens_type == 'thermometer':
+                self._value = meshmesh.DEVICE.cmd_custom_thermo_sample(0, self._config.address)
+            else:
+                temp, press, humi = meshmesh.DEVICE.cmd_weather_data(self._config.address)
+                if self._sens_type == 'temperature':
+                    self._value = temp
+                elif self._sens_type == 'humidity':
+                    self._value = humi
+                elif self._sens_type == 'illumination':
+                    self._value = None
+                elif self._sens_type == 'lux':
+                    self._value = None
+                elif self._sens_type == 'pressure':
+                    self._value = press
         except Fault:
             _LOGGER.warning("Transmission failure when attempting to get sample from MeshMesh device at address: %08X", self._config.address)
         except ConnectionError:
