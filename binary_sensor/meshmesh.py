@@ -37,13 +37,12 @@ class MeshMeshBinarySensor(meshmesh.MeshMeshDigitalIn, BinarySensorDevice):
 
 
 class MeshMeshBinaryDaliStatusConfig(meshmesh.MeshMeshConfig):
-
     @property
     def mode(self):
         return self._config.get(CONF_MODE, DEFAULT_MODE)
 
 
-class MeshMeshBinaryDaliStatus(BinarySensorDevice):
+class MeshMeshBinaryBase(BinarySensorDevice):
     def __init__(self, hass, config):
         self._config = config
         self._state = False
@@ -64,6 +63,11 @@ class MeshMeshBinaryDaliStatus(BinarySensorDevice):
     def is_on(self):
         return self._state
 
+
+class MeshMeshBinaryDaliStatus(MeshMeshBinaryBase):
+    def __init__(self, hass, config):
+        super().__init__(hass, config)
+
     def update(self):
         try:
             value = meshmesh.DEVICE.cmd_dali_status(self._config.address)
@@ -76,5 +80,19 @@ class MeshMeshBinaryDaliStatus(BinarySensorDevice):
         except Fault:
             _LOGGER.warning("MeshMeshLight._turn_dali_on Transmission failure with device at addres: %08X", self._config.address)
             self._state = True
+        except ConnectionError:
+            _LOGGER.warning("Connection error with meshmeshhub proxy server")
+
+
+class MeshMeshBinaryDaliPresence(MeshMeshBinaryBase):
+    def __init__(self, hass, config):
+        super().__init__(hass, config)
+
+    def update(self):
+        try:
+            self._state = meshmesh.DEVICE.cmd_dali_presence(self._config.address)
+            _LOGGER.debug("MeshMeshBinaryDaliPresence.update readed %d" % self._state)
+         except Fault:
+            _LOGGER.warning("MeshMeshLight._turn_dali_on Transmission failure with device at addres: %08X", self._config.address)
         except ConnectionError:
             _LOGGER.warning("Connection error with meshmeshhub proxy server")
