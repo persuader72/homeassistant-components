@@ -16,8 +16,8 @@ CONF_MAX_VOLTS = 'max_volts'
 DEFAULT_VOLTS = 1.2
 DEPENDENCIES = ['meshmesh']
 
-TYPES = ['analog', 'temperature', 'pressure', 'humidity', 'thermometer']
-NAMES_TYPE = ['Analog', 'Temperature', 'Pressure', 'Humidity', 'Temperature']
+TYPES = ['analog', 'current', 'temperature', 'pressure', 'humidity', 'thermometer']
+NAMES_TYPE = ['Analog', 'Current', 'Temperature', 'Pressure', 'Humidity', 'Temperature']
 
 PLATFORM_SCHEMA = meshmesh.PLATFORM_SCHEMA.extend({
     vol.Required(CONF_TYPE): vol.In(TYPES),
@@ -77,6 +77,8 @@ class MeshMeshSensor(Entity):
         try:
             if self._sens_type == 'thermometer':
                 self._value = meshmesh.DEVICE.cmd_custom_thermo_sample(0, self._config.address) / 10.0
+            elif self._sens_type == 'current':
+                self._value = meshmesh.DEVICE.cmd_custom_current_sample(self._config.address) / 4.0
             else:
                 temp, press, humi = meshmesh.DEVICE.cmd_weather_data(self._config.address)
                 if self._sens_type == 'temperature':

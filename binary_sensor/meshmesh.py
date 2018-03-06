@@ -10,7 +10,7 @@ _LOGGER = logging.getLogger(__name__)
 
 CONF_MODE = "mode"
 DEFAULT_MODE = "pin"
-MODES = ['pin', 'dali']
+MODES = ['pin', 'dali', 'presence']
 
 CONF_ON_STATE = 'on_state'
 
@@ -28,6 +28,8 @@ PLATFORM_SCHEMA = meshmesh.PLATFORM_SCHEMA.extend({
 def setup_platform(hass, config, add_devices, discovery_info=None):
     if config.get(CONF_MODE) == 'dali':
         add_devices([MeshMeshBinaryDaliStatus(hass, MeshMeshBinaryDaliStatusConfig(config))], True)
+    elif config.get(CONF_MODE) == 'presence':
+        add_devices([MeshMeshBinaryDaliPresence(hass, MeshMeshBinaryDaliStatusConfig(config))], True)
     else:
         add_devices([MeshMeshBinarySensor(hass, meshmesh.MeshMeshDigitalInConfig(config))], True)
 
@@ -92,7 +94,7 @@ class MeshMeshBinaryDaliPresence(MeshMeshBinaryBase):
         try:
             self._state = meshmesh.DEVICE.cmd_dali_presence(self._config.address)
             _LOGGER.debug("MeshMeshBinaryDaliPresence.update readed %d" % self._state)
-         except Fault:
+        except Fault:
             _LOGGER.warning("MeshMeshLight._turn_dali_on Transmission failure with device at addres: %08X", self._config.address)
         except ConnectionError:
             _LOGGER.warning("Connection error with meshmeshhub proxy server")
