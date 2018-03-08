@@ -80,7 +80,7 @@ class MeshMeshBinaryDaliStatus(MeshMeshBinaryBase):
                 return
             self._state = (value & 0x02) != 0
         except Fault:
-            _LOGGER.warning("MeshMeshLight._turn_dali_on Transmission failure with device at addres: %08X", self._config.address)
+            _LOGGER.warning("MeshMeshBinaryDaliStatus.update Transmission failure with device at addres: %08X", self._config.address)
             self._state = True
         except ConnectionError:
             _LOGGER.warning("Connection error with meshmeshhub proxy server")
@@ -95,6 +95,6 @@ class MeshMeshBinaryDaliPresence(MeshMeshBinaryBase):
             self._state = meshmesh.DEVICE.cmd_dali_presence(self._config.address)
             _LOGGER.debug("MeshMeshBinaryDaliPresence.update readed %d" % self._state)
         except Fault:
-            _LOGGER.warning("MeshMeshLight._turn_dali_on Transmission failure with device at addres: %08X", self._config.address)
+            _LOGGER.warning("MeshMeshBinaryDaliPresence.update Transmission failure with device at addres: %08X", self._config.address)
         except ConnectionError:
             _LOGGER.warning("Connection error with meshmeshhub proxy server")
