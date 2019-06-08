@@ -10,7 +10,7 @@ _LOGGER = logging.getLogger(__name__)
 
 CONF_MODE = "mode"
 DEFAULT_MODE = "pin"
-MODES = ['pin', 'dali', 'presence']
+MODES = ['pin', 'dali', 'presence', 'pir']
 
 CONF_ON_STATE = 'on_state'
 
@@ -30,6 +30,8 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
         add_devices([MeshMeshBinaryDaliStatus(hass, MeshMeshBinaryDaliStatusConfig(config))], True)
     elif config.get(CONF_MODE) == 'presence':
         add_devices([MeshMeshBinaryDaliPresence(hass, MeshMeshBinaryDaliStatusConfig(config))], True)
+    elif config.get(CONF_MODE) == 'pir':
+        add_devices([MeshMeshBinaryPresence(hass, MeshMeshBinaryDaliStatusConfig(config))], True)
     else:
         add_devices([MeshMeshBinarySensor(hass, meshmesh.MeshMeshDigitalInConfig(config))], True)
 
@@ -86,6 +88,20 @@ class MeshMeshBinaryDaliStatus(MeshMeshBinaryBase):
             _LOGGER.warning("Connection error with meshmeshhub proxy server")
 
 
+class MeshMeshBinaryPresence(MeshMeshBinaryBase):
+    def __init__(self, hass, config):
+        super().__init__(hass, config)
+
+    def update(self):
+        try:
+            self._state = meshmesh.DEVICE.cmd_custom_presence_get(self._config.address)
+            _LOGGER.warning("MeshMeshBinaryPresence.update readed %d" % self._state)
+        except Fault:
+            _LOGGER.warning("MeshMeshBinaryPresence.update Transmission failure with device at addres: %08X", self._config.address)
+        except ConnectionError:
+            _LOGGER.warning("MeshMeshBinaryPresence.update Connection error with meshmeshhub proxy server")
+
+
 class MeshMeshBinaryDaliPresence(MeshMeshBinaryBase):
     def __init__(self, hass, config):
         super().__init__(hass, config)
@@ -98,3 +114,5 @@ class MeshMeshBinaryDaliPresence(MeshMeshBinaryBase):
             _LOGGER.warning("MeshMeshBinaryDaliPresence.update Transmission failure with device at addres: %08X", self._config.address)
         except ConnectionError:
             _LOGGER.warning("Connection error with meshmeshhub proxy server")
+
+
