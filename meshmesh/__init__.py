@@ -114,12 +114,12 @@ class MeshMeshAnalogIn(Entity):
 
     def update(self):
         try:
-            print("MeshMeshAnalogIn.update %06X" % self._config.address)
+            print("MeshMeshAnalogIn.update: %06X" % self._config.address)
             self._value = int(DEVICE.cmd_read_analog(self._config.address) / ESP_ADC_RESOLUTION * 1000.0) / 10.0
         except xmlrpc.client.Fault:
-            _LOGGER.warning("MeshMeshLight.turn_on Transmission failure with device at addres: %08X", self._config.address)
+            _LOGGER.warning("MeshMeshAnalogIn.update: Transmission failure with device at addres: %08X", self._config.address)
         except ConnectionError:
-            _LOGGER.warning("Connection error with meshmeshhub proxy server")
+            _LOGGER.warning("MeshMeshAnalogIn.update: Connection error with meshmeshhub proxy server")
 
 
 class MeshMeshAnalogOutConfig(MeshMeshPinConfig):
@@ -166,13 +166,13 @@ class MeshMeshDigitalIn(Entity):
         try:
             value = DEVICE.cmd_digital_in(self._config.pin, self._config.address)
             if value is None:
-                _LOGGER.error("Null value returnd from device at address %08X", self._config.address)
+                _LOGGER.error("MeshMeshDigitalIn.update: Null value returnd from device at address %08X", self._config.address)
                 return
             self._state = value & self._config.pin != 0
         except xmlrpc.client.Fault:
-            _LOGGER.warning("MeshMeshLight.turn_on Transmission failure with device at addres: %08X", self._config.address)
+            _LOGGER.warning("MeshMeshDigitalIn.update: Transmission failure with device at addres: %08X", self._config.address)
         except ConnectionError:
-            _LOGGER.warning("Connection error with meshmeshhub proxy server")
+            _LOGGER.warning("MeshMeshDigitalIn.update: Connection error with meshmeshhub proxy server")
 
 
 class MeshMeshDigitalOutConfig(MeshMeshPinConfig):

@@ -74,19 +74,18 @@ class MeshMeshLight(Light):
         try:
             meshmesh.DEVICE.cmd_custom_light_set(red, green, blue, 0, self._config.address)
         except Fault:
-            print(str(Fault))
-            _LOGGER.warning("MeshMeshLight.turn_on Transmission failure with device at addres: %08X", self._config.address)
+            _LOGGER.warning("MeshMeshLight._set_rgb_color: Transmission failure with device at addres: %08X", self._config.address)
         except ConnectionError:
-            _LOGGER.warning("Connection error with meshmeshhub proxy server")
+            _LOGGER.warning("MeshMeshLight._set_rgb_color: Connection error with meshmeshhub proxy server")
 
     def _turn_dali_on(self, bright):
-        _LOGGER.warning("_turn_dali_on bright %d", bright)
+        _LOGGER.warning("MeshMeshLight._turn_dali_on bright: %d", bright)
         try:
             meshmesh.DEVICE.cmd_dali_set_power(bright, self._config.address)
         except Fault:
-            _LOGGER.warning("MeshMeshLight._turn_dali_on Transmission failure with device at addres: %08X", self._config.address)
+            _LOGGER.warning("MeshMeshLight._turn_dali_on: Transmission failure with device at addres: %08X", self._config.address)
         except ConnectionError:
-            _LOGGER.warning("Connection error with meshmeshhub proxy server")
+            _LOGGER.warning("MeshMeshLight._turn_dali_on: Connection error with meshmeshhub proxy server")
 
     def turn_on(self, **kwargs) -> None:
         bright = kwargs[ATTR_BRIGHTNESS] if ATTR_BRIGHTNESS in kwargs else None
