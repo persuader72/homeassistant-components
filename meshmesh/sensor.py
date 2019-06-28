@@ -76,7 +76,10 @@ class MeshMeshSensor(Entity):
     def update(self):
         try:
             if self._sens_type == 'thermometer':
-                self._value = meshmesh.DEVICE.cmd_custom_thermo_sample(0, self._config.address) / 10.0
+                value = meshmesh.DEVICE.cmd_custom_thermo_sample(0, self._config.address) / 10.0
+                if value > 5.0:
+                    self._value = value
+
             elif self._sens_type == 'current':
                 self._value = meshmesh.DEVICE.cmd_custom_current_sample(self._config.address) / 4.0
             else:
