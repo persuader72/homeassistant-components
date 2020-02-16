@@ -1,5 +1,4 @@
 import logging
-import binascii
 import voluptuous as vol
 import homeassistant.helpers.config_validation as cv
 
@@ -7,22 +6,23 @@ from xmlrpc.client import Fault
 
 from homeassistant.core import callback
 from homeassistant.const import (STATE_OFF)
-from homeassistant.components.climate import (ClimateDevice, PLATFORM_SCHEMA)
-from homeassistant.components.climate.const import (STATE_DRY, STATE_HEAT, STATE_COOL, STATE_AUTO, ATTR_OPERATION_MODE, SUPPORT_OPERATION_MODE,
-                                                    SUPPORT_TARGET_TEMPERATURE, SUPPORT_FAN_MODE, SUPPORT_SWING_MODE, SUPPORT_ON_OFF)
-from homeassistant.const import (ATTR_UNIT_OF_MEASUREMENT, ATTR_TEMPERATURE, CONF_NAME, CONF_HOST, CONF_MAC, CONF_TIMEOUT, CONF_CUSTOMIZE)
+from homeassistant.components.climate import ClimateDevice
+from homeassistant.components.climate.const import (HVAC_MODE_DRY, HVAC_MODE_HEAT, HVAC_MODE_COOL,
+                                                    HVAC_MODE_OFF, HVAC_MODE_AUTO, SUPPORT_TARGET_TEMPERATURE,
+                                                    SUPPORT_FAN_MODE, SUPPORT_SWING_MODE)
+from homeassistant.const import (ATTR_UNIT_OF_MEASUREMENT, ATTR_TEMPERATURE, CONF_TIMEOUT, CONF_CUSTOMIZE)
 from homeassistant.helpers.event import (async_track_state_change)
 from homeassistant.helpers.restore_state import RestoreEntity
 
-REQUIREMENTS = ['meshmesh_hub']
-
 from .. import meshmesh
+
+REQUIREMENTS = ['meshmesh_hub']
 
 _LOGGER = logging.getLogger(__name__)
 
 VERSION = '1.0.0'
 
-SUPPORT_FLAGS = SUPPORT_ON_OFF | SUPPORT_TARGET_TEMPERATURE | SUPPORT_OPERATION_MODE | SUPPORT_FAN_MODE | SUPPORT_SWING_MODE
+SUPPORT_FLAGS = SUPPORT_TARGET_TEMPERATURE | SUPPORT_FAN_MODE | SUPPORT_SWING_MODE
 
 CONF_MIN_TEMP = 'min_temp'
 CONF_MAX_TEMP = 'max_temp'
@@ -42,10 +42,10 @@ DEFAULT_MIN_TEMP = 16
 DEFAULT_MAX_TEMP = 30
 DEFAULT_TARGET_TEMP = 20
 DEFAULT_TARGET_TEMP_STEP = 1
-DEFAULT_OPERATION_LIST = [STATE_OFF, "", STATE_AUTO, STATE_HEAT, STATE_DRY, STATE_COOL]
+DEFAULT_OPERATION_LIST = [HVAC_MODE_OFF, "", HVAC_MODE_AUTO, HVAC_MODE_HEAT, HVAC_MODE_DRY, HVAC_MODE_COOL]
 DEFAULT_FAN_MODE_LIST = ['low', 'mid', 'high', 'auto']
 DEFAULT_SWING_MODE_LIST = ['low', 'mid', 'high', 'auto']
-DEFAULT_OPERATION = STATE_AUTO
+DEFAULT_OPERATION = HVAC_MODE_AUTO
 DEFAULT_FAN_MODE = 'auto'
 DEFAULT_SWING_MODE = 'low'
 
