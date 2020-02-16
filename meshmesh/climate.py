@@ -1,4 +1,6 @@
 import logging
+from typing import List
+
 import voluptuous as vol
 import homeassistant.helpers.config_validation as cv
 
@@ -189,6 +191,14 @@ class MeshMeshClimate(ClimateDevice, RestoreEntity):
             return True
         except ValueError:
             return False
+
+    @property
+    def hvac_mode(self) -> str:
+        return self.current_operation
+
+    @property
+    def hvac_modes(self) -> List[str]:
+        return DEFAULT_OPERATION_LIST
 
     @property
     def should_poll(self):
