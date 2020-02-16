@@ -1,5 +1,5 @@
 import logging
-from typing import List
+from typing import List, Optional
 
 import voluptuous as vol
 import homeassistant.helpers.config_validation as cv
@@ -11,7 +11,9 @@ from homeassistant.const import (STATE_OFF)
 from homeassistant.components.climate import ClimateDevice
 from homeassistant.components.climate.const import (HVAC_MODE_DRY, HVAC_MODE_HEAT, HVAC_MODE_COOL,
                                                     HVAC_MODE_OFF, HVAC_MODE_AUTO, SUPPORT_TARGET_TEMPERATURE,
-                                                    SUPPORT_FAN_MODE, SUPPORT_SWING_MODE)
+                                                    SUPPORT_FAN_MODE, SUPPORT_SWING_MODE,
+                                                    FAN_AUTO, FAN_HIGH, FAN_MIDDLE, FAN_LOW,
+                                                    SWING_OFF, SWING_BOTH, SWING_HORIZONTAL, SWING_VERTICAL)
 from homeassistant.const import (ATTR_UNIT_OF_MEASUREMENT, ATTR_TEMPERATURE, CONF_TIMEOUT, CONF_CUSTOMIZE)
 from homeassistant.helpers.event import (async_track_state_change)
 from homeassistant.helpers.restore_state import RestoreEntity
@@ -45,8 +47,8 @@ DEFAULT_MAX_TEMP = 30
 DEFAULT_TARGET_TEMP = 20
 DEFAULT_TARGET_TEMP_STEP = 1
 DEFAULT_OPERATION_LIST = [HVAC_MODE_OFF, "", HVAC_MODE_AUTO, HVAC_MODE_HEAT, HVAC_MODE_DRY, HVAC_MODE_COOL]
-DEFAULT_FAN_MODE_LIST = ['low', 'mid', 'high', 'auto']
-DEFAULT_SWING_MODE_LIST = ['low', 'mid', 'high', 'auto']
+DEFAULT_FAN_MODE_LIST = [FAN_LOW, FAN_MIDDLE, FAN_HIGH, FAN_AUTO]
+DEFAULT_SWING_MODE_LIST = [SWING_OFF, SWING_VERTICAL, SWING_VERTICAL, SWING_BOTH]
 DEFAULT_OPERATION = HVAC_MODE_AUTO
 DEFAULT_FAN_MODE = 'auto'
 DEFAULT_SWING_MODE = 'low'
@@ -192,6 +194,10 @@ class MeshMeshClimate(ClimateDevice, RestoreEntity):
         except ValueError:
             return False
 
+# ------------------------------------------------------------------------------------------------------------
+# - Checked methods
+# ------------------------------------------------------------------------------------------------------------
+
     @property
     def hvac_mode(self) -> str:
         return self.current_operation
@@ -201,8 +207,28 @@ class MeshMeshClimate(ClimateDevice, RestoreEntity):
         return DEFAULT_OPERATION_LIST
 
     @property
+    def fan_mode(self):
+        return self._current_fan_mode
+
+    @property
+    def fan_modes(self) -> Optional[List[str]]:
+        return self._fan_list
+
+    @property
+    def swing_mode(self):
+        return self._current_swing_mode
+
+    @property
+    def swing_modes(self):
+        return self._swing_list
+
+    @property
     def should_poll(self):
         return False
+
+# ------------------------------------------------------------------------------------------------------------
+# - UnChecked methods
+# ------------------------------------------------------------------------------------------------------------
 
     @property
     def name(self):
