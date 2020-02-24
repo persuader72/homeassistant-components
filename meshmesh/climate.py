@@ -48,7 +48,7 @@ DEFAULT_TARGET_TEMP = 20
 DEFAULT_TARGET_TEMP_STEP = 1
 DEFAULT_OPERATION_LIST = [HVAC_MODE_OFF, "", HVAC_MODE_AUTO, HVAC_MODE_HEAT, HVAC_MODE_DRY, HVAC_MODE_COOL]
 DEFAULT_FAN_MODE_LIST = [FAN_LOW, FAN_MIDDLE, FAN_HIGH, FAN_AUTO]
-DEFAULT_SWING_MODE_LIST = [SWING_OFF, SWING_VERTICAL, SWING_VERTICAL, SWING_BOTH]
+DEFAULT_SWING_MODE_LIST = [SWING_OFF, SWING_HORIZONTAL, SWING_VERTICAL, SWING_BOTH]
 DEFAULT_OPERATION = HVAC_MODE_AUTO
 DEFAULT_FAN_MODE = 'auto'
 DEFAULT_SWING_MODE = 'low'
@@ -117,7 +117,7 @@ class MeshMeshClimate(ClimateDevice, RestoreEntity):
 
         self._current_temperature = 0
         self._last_on_operation = self._config.def_mode
-        self._current_operation = self._config.def_mode
+        self._current_hvac_mode = self._config.def_mode
         self._current_fan_mode = default_fan_mode
         self._current_swing_mode = default_swing_mode
 
@@ -236,7 +236,7 @@ class MeshMeshClimate(ClimateDevice, RestoreEntity):
 
     @property
     def is_on(self):
-        return self._current_operation != STATE_OFF
+        return self._current_hvac_mode != STATE_OFF
 
     @property
     def temperature_unit(self):
@@ -264,7 +264,7 @@ class MeshMeshClimate(ClimateDevice, RestoreEntity):
 
     @property
     def current_operation(self):
-        return self._current_operation
+        return self._current_hvac_mode
 
     @property
     def operation_list(self):
@@ -291,47 +291,36 @@ class MeshMeshClimate(ClimateDevice, RestoreEntity):
         return SUPPORT_FLAGS
 
     def turn_on(self):
-        if self._current_operation == STATE_OFF:
-            self.set_operation_mode(self._last_on_operation)
+        if self._current_hvac_mode == STATE_OFF:
+            self.set_hvac_mode(self._last_on_operation)
         else:
-            self.set_operation_mode(self._current_operation)
+            self.set_hvac_mode(self._current_hvac_mode)
 
     def turn_off(self):
-        self.set_operation_mode(STATE_OFF)
+        self.set_hvac_mode(STATE_OFF)
 
     def set_temperature(self, **kwargs):
         if kwargs.get(ATTR_TEMPERATURE) is not None:
             self._target_temperature = kwargs.get(ATTR_TEMPERATURE)
-            if not (self._current_operation.lower() == 'off' or self._current_operation.lower() == 'idle'):
+            if not (self._current_hvac_mode.lower() == 'off' or self._current_hvac_mode.lower() == 'idle'):
                 self._set_state()
             elif self._default_operation_from_idle is not None:
-                self.set_operation_mode(self._default_operation_from_idle)
+                self.set_hvac_mode(self._default_operation_from_idle)
             self.schedule_update_ha_state()
 
     def set_fan_mode(self, fan):
         self._current_fan_mode = fan
-        if not (self._current_operation.lower() == 'off' or self._current_operation.lower() == 'idle'):
+        if not (self._current_hvac_mode.lower() == 'off' or self._current_hvac_mode.lower() == 'idle'):
             self._set_state()
         self.schedule_update_ha_state()
 
     def set_swing_mode(self, swing):
         self._current_swing_mode = swing
-        if not (self._current_operation.lower() == 'off' or self._current_operation.lower() == 'idle'):
+        if not (self._current_hvac_mode.lower() == 'off' or self._current_hvac_mode.lower() == 'idle'):
             self._set_state()
         self.schedule_update_ha_state()
 
-    def set_operation_mode(self, operation_mode):
-        self._current_operation = operation_mode
+    def set_hvac_mode(self, operation_mode):
+        self._current_hvac_mode = operation_mode
         self._set_state()
         self.schedule_update_ha_state()
-
-    async def async_added_to_hass(self):
-        """Run when entity about to be added."""
-        await super().async_added_to_hass()
-
-        last_state = await self.async_get_last_state()
-
-        if last_state is not None:
-            self._target_temperature = last_state.attributes['temperature']
-            self._current_operation = last_state.attributes['operation_mode']
-            self._current_fan_mode = last_state.attributes['fan_mode']
