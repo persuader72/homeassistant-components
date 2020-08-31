@@ -2,7 +2,7 @@ from os import path
 
 import voluptuous as vol
 
-from homeassistant.components.light import Light, SUPPORT_BRIGHTNESS, ATTR_BRIGHTNESS
+from homeassistant.components.light import LightEntity, SUPPORT_BRIGHTNESS, ATTR_BRIGHTNESS
 from homeassistant.helpers import config_validation as cv
 
 PATH_BL = "/sys/class/backlight/rpi_backlight/"
@@ -22,12 +22,13 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
     add_devices([RpiBacklightLight(config)])
 
 
-class RpiBacklightLight(Light):
+class RpiBacklightLight(LightEntity):
     def __init__(self, config):
         self._init = False
         self._name = config.get("name")
         self._state = False
         self._brightness = False
+        self._unique_id = "rpi_backlight_001"
 
         if _sysclass_in(FILE_BL_POWER) != '':
             self._init = True
@@ -69,6 +70,13 @@ class RpiBacklightLight(Light):
     @property
     def is_on(self):
         return self._state
+    
+    @property
+    def unique_id(self):
+        """Return the ID of this device."""
+        return self._unique_id
+
+
 
     def update(self):
         self._state = _sysclass_in(FILE_BL_POWER) == FILE_BL_POWER_ON
